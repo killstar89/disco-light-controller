@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Disco Viewer 1</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background-color: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #stage-img {
+      max-width: 100%;
+      max-height: 100%;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <img id="stage-img" src="" alt="Stage Image">
+  <script>
+    async function updateViewer() {
+      const res = await fetch('data.json');
+      const data = await res.json();
+
+      document.body.style.backgroundColor = data.color || 'black';
+
+      const image = data.images?.find(img => img.visible);
+      const imgEl = document.getElementById("stage-img");
+      if (image) {
+        imgEl.src = image.url;
+        imgEl.style.display = 'block';
+      } else {
+        imgEl.style.display = 'none';
+      }
+    }
+
+    updateViewer();
+    setInterval(updateViewer, 3000); // auto-update every 3s
+  </script>
+</body>
+</html>
