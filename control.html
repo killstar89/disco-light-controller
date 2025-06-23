@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Disco Light Control</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #121212;
+        color: white;
+      }
+      .color-button {
+        padding: 10px 20px;
+        margin: 5px;
+        border: none;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      #preview {
+        margin-top: 20px;
+        padding: 20px;
+        font-size: 18px;
+        border: 2px solid #333;
+        border-radius: 10px;
+        text-align: center;
+        transition: background-color 0.4s;
+      }
+      .stage-image {
+        display: inline-block;
+        margin: 10px;
+      }
+      .stage-image img {
+        max-width: 100px;
+        margin-right: 10px;
+      }
+      .stage-image button {
+        display: block;
+        margin-top: 5px;
+        padding: 5px;
+        background-color: red;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      .stage-image .hide-btn {
+        background-color: #FFC107;
+        color: black;
+      }
+      input, button {
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>🎛️ Disco Light Controller</h2>
+
+    <h3>🎨 Choose a Color:</h3>
+    <div>
+      <button class="color-button" style="background-color: red;" onclick="setColor('#FF0000')">Red</button>
+      <button class="color-button" style="background-color: green;" onclick="setColor('#00FF00')">Green</button>
+      <button class="color-button" style="background-color: blue;" onclick="setColor('#0000FF')">Blue</button>
+      <button class="color-button" style="background-color: yellow; color: black;" onclick="setColor('#FFFF00')">Yellow</button>
+      <button class="color-button" style="background-color: cyan; color: black;" onclick="setColor('#00FFFF')">Cyan</button>
+      <button class="color-button" style="background-color: magenta;" onclick="setColor('#FF00FF')">Magenta</button>
+      <button class="color-button" style="background-color: white; color: black;" onclick="setColor('#FFFFFF')">White</button>
+      <button class="color-button" style="background-color: black;" onclick="setColor('#000000')">Black</button>
+    </div>
+
+    <div id="preview">Current Color: <span id="colorBox">None</span></div>
+
+    <hr>
+
+    <h3>Add an Image to Stage:</h3>
+    <input type="text" id="imageUrl" placeholder="Enter image URL" style="width: 60%; padding: 10px;">
+    <button onclick="addImageUrl()">Add Image</button>
+
+    <hr>
+
+    <h3>🧾 Current Stage Images</h3>
+    <div id="stageImagesList">Loading...</div>
+
+    <script>
+      async function setColor(color) {
+        const res = await fetch('data.json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ color })
+        });
+        if (res.ok) updateDisplay(color);
+      }
+
+      function updateDisplay(color) {
+        document.getElementById("colorBox").innerText = color;
+        document.getElementById("preview").style.backgroundColor = color;
+      }
+
+      async function addImageUrl() {
+        const imageUrl = document.getElementById("imageUrl").value;
+        if (!imageUrl) return alert("Please enter a valid image URL.");
+        const res = await fetch('data.json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ addImage: imageUrl })
+        });
+        if (res.ok) {
+          document.getElementById("imageUrl").value = "";
+          loadStageImages();
+        }
+      }
+
+      async function loadStageImages() {
+        const res = await fetch('data.json');
+        const data = await res.json();
+        const container = document.getElementById("stageImagesList");
+        container.innerHTML = "";
+
+        (data.images || []).forEach((img, index) => {
+          const div = document.createElement("div");
+          div.classList.add("stage-image");
+
+          const image = document.createElement("img");
+          image.src = img.url;
+
+          const hideBtn = document.createElement("button");
+          hideBtn.textContent = img.visible ? "👁️ Hide" : "👻 Show";
+          hideBtn.className = "hide-btn";
+          hideBtn.onclick = async () => {
+            await fetch('data.json', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ toggleImage: index })
+            });
+            loadStageImages();
+          };
+
+          const removeBtn = document.createElement("button");
+          removeBtn.textContent = "❌ Remove";
+          removeBtn.onclick = async () => {
+            await fetch('data.json', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ removeImage: index })
+            });
+            loadStageImages();
+          };
+
+          div.appendChild(image);
+          div.appendChild(hideBtn);
+          div.appendChild(removeBtn);
+          container.appendChild(div);
+        });
+      }
+
+      loadStageImages();
+    </script>
+  </body>
+</html>
