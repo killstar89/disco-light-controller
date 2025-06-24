@@ -27,31 +27,6 @@
         text-align: center;
         transition: background-color 0.4s;
       }
-      .stage-image {
-        display: inline-block;
-        margin: 10px;
-      }
-      .stage-image img {
-        max-width: 100px;
-        margin-right: 10px;
-      }
-      .stage-image button {
-        display: block;
-        margin-top: 5px;
-        padding: 5px;
-        background-color: red;
-        color: white;
-        border: none;
-        cursor: pointer;
-        border-radius: 5px;
-      }
-      .stage-image .hide-btn {
-        background-color: #FFC107;
-        color: black;
-      }
-      input, button {
-        font-size: 16px;
-      }
     </style>
   </head>
   <body>
@@ -83,16 +58,26 @@
     <div id="stageImagesList">Loading...</div>
 
     <script>
-      const apiUrl = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLjbv72jzxdBmU3A9oafznIzwMPdBECiTwRmOTff9qu3Id-U0M9-Y0vss0_OMJQ-ubRU7CkFG0GldG-tWJf_jZOkUlpqb3or0SqmlCcQLFOesk1qWzKIxgSHqkK3HCOXHxZ5hbPZIGcWHjNo0TfNwX_P2rdu9K-RVIaRz4kkSL_iPTBnigLbJG7NMiOQ3SwiMGoGaPxI633uhGFf47QnOEOfwQx6D7kNhGK0tE4xsEcTeeP5I9AeOx7kmazfsY933BUZOIMm7gMY_tycnWVTrEMUhgujbQ&lib=M4sqH0GuKIP5sXHYvJN8Tef5PjXsBiptZ';
- // Replace with your Apps Script URL
+      // Replace with your Google Apps Script URL
+      const apiUrl = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
 
       async function setColor(color) {
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ color })
-        });
-        if (res.ok) updateDisplay(color);
+        try {
+          const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ color })
+          });
+          if (!res.ok) {
+            console.error('Failed to set color:', res.status);
+            return;
+          }
+          const responseData = await res.json();
+          console.log(responseData); // Log the server response
+          updateDisplay(color);
+        } catch (error) {
+          console.error('Error setting color:', error);
+        }
       }
 
       function updateDisplay(color) {
@@ -103,58 +88,66 @@
       async function addImageUrl() {
         const imageUrl = document.getElementById("imageUrl").value;
         if (!imageUrl) return alert("Please enter a valid image URL.");
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ addImage: imageUrl })
-        });
-        if (res.ok) {
-          document.getElementById("imageUrl").value = "";
-          loadStageImages();
+        try {
+          const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ addImage: imageUrl })
+          });
+          if (res.ok) {
+            document.getElementById("imageUrl").value = "";
+            loadStageImages();
+          }
+        } catch (error) {
+          console.error('Error adding image:', error);
         }
       }
 
       async function loadStageImages() {
-        const res = await fetch(apiUrl);
-        const data = await res.json();
-        const container = document.getElementById("stageImagesList");
-        container.innerHTML = "";
+        try {
+          const res = await fetch(apiUrl);
+          const data = await res.json();
+          const container = document.getElementById("stageImagesList");
+          container.innerHTML = "";
 
-        (data.images || []).forEach((img, index) => {
-          const div = document.createElement("div");
-          div.classList.add("stage-image");
+          (data.images || []).forEach((img, index) => {
+            const div = document.createElement("div");
+            div.classList.add("stage-image");
 
-          const image = document.createElement("img");
-          image.src = img.url;
+            const image = document.createElement("img");
+            image.src = img.url;
 
-          const hideBtn = document.createElement("button");
-          hideBtn.textContent = img.visible ? "👁️ Hide" : "👻 Show";
-          hideBtn.className = "hide-btn";
-          hideBtn.onclick = async () => {
-            await fetch(apiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ toggleImage: index })
-            });
-            loadStageImages();
-          };
+            const hideBtn = document.createElement("button");
+            hideBtn.textContent = img.visible ? "👁️ Hide" : "👻 Show";
+            hideBtn.className = "hide-btn";
+            hideBtn.onclick = async () => {
+              await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ toggleImage: index })
+              });
+              loadStageImages();
+            };
 
-          const removeBtn = document.createElement("button");
-          removeBtn.textContent = "❌ Remove";
-          removeBtn.onclick = async () => {
-            await fetch(apiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ removeImage: index })
-            });
-            loadStageImages();
-          };
+            const removeBtn = document.createElement("button");
+            removeBtn.textContent = "❌ Remove";
+            removeBtn.onclick = async () => {
+              await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ removeImage: index })
+              });
+              loadStageImages();
+            };
 
-          div.appendChild(image);
-          div.appendChild(hideBtn);
-          div.appendChild(removeBtn);
-          container.appendChild(div);
-        });
+            div.appendChild(image);
+            div.appendChild(hideBtn);
+            div.appendChild(removeBtn);
+            container.appendChild(div);
+          });
+        } catch (error) {
+          console.error('Error loading images:', error);
+        }
       }
 
       loadStageImages();
